@@ -8,5 +8,6 @@ import com.vnpt.epay.authen.entity.User;
 public interface UserRepository extends JpaRepository<User, Integer> {
 
     User findByEmail(String user);
+    User findBySecret(String secret);
 
 }

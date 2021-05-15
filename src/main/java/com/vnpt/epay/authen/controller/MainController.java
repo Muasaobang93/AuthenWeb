@@ -12,11 +12,15 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import com.vnpt.epay.authen.entity.User;
 import com.vnpt.epay.authen.service.UserDetailsServiceImpl;
+import com.vnpt.epay.authen.service.UserSevice;
 
 @Controller
 public class MainController {
 	@Autowired
-	UserDetailsServiceImpl userService;
+	UserDetailsServiceImpl userDetailsServiceImpl;
+	
+	@Autowired
+	UserSevice userSevice;
 
     @GetMapping("/")
     public String index() {
@@ -43,9 +47,9 @@ public class MainController {
     	Locale locale = request.getLocale();
         String result = userService.validateVerificationToken(token);
         if(result.equals("valid")) {
-            User user = userService.getUser(token);
+            User user = userSevice.findBySecret(token);
             if (user.isAdditionalSecurity()) {
-                model.addAttribute("qr", userService.generateQRUrl(user));
+                model.addAttribute("qr", userSevice.generateQRUrl(user));
                 return "redirect:/qrcode.html?lang=" + locale.getLanguage();
             }
             
