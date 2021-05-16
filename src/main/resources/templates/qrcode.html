@@ -5,7 +5,7 @@
         Scan this Barcode using Google Authenticator app on your phone 
         to use it later in login
     </p>
-    <img th:src="${param.qr[0]}"/>
+    <img th:src="${qrurl}"/>
 </div>
 <a href="/login" class="btn btn-primary">Go to login page</a>
 </body>
