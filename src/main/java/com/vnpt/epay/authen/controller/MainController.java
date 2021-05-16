@@ -19,12 +19,12 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-
 import com.vnpt.epay.authen.entity.User;
 import com.vnpt.epay.authen.service.IUserService;
 import com.vnpt.epay.authen.service.UserDetailsServiceImpl;
 import com.vnpt.epay.authen.service.UserSevice;
 
+import dev.samstevens.totp.code.CodeVerifier;
 import dev.samstevens.totp.qr.QrData;
 import dev.samstevens.totp.qr.QrDataFactory;
 import dev.samstevens.totp.qr.QrGenerator;
@@ -47,6 +47,9 @@ public class MainController {
 	@Autowired
 	private QrGenerator qrGenerator;
 
+	@Autowired
+	private CodeVerifier verifier;
+
 	@GetMapping("/")
 	public String index() {
 		return "index";
@@ -59,27 +62,29 @@ public class MainController {
 
 	@GetMapping("/signup")
 	public String signup() {
-		
+
 		return "/signup";
 	}
-	
-	 @RequestMapping(value = "/qr", method = RequestMethod.POST)
-	    public String submitCreateUser(Model model, @RequestParam HashMap<String, String> reqParams, RedirectAttributes redirectAttributes) throws UnsupportedEncodingException {
-	    		User user = new User();
-		    	String email = reqParams.get("email");
-		        String password = reqParams.get("password");
-		        
-		        user.setEmail(email);
-		        user.setPassword(password);
-		        String secret = secretGenerator.generate();
-		        user.setSecret(secret);
-		        userSevice.createUser(user);
-		        String   qrUrl = userSevice.generateQRUrl(user);
-		        model.addAttribute("qrurl", qrUrl);
-		        
-		        return "qr";
-	     
-	    }
+
+	@RequestMapping(value = "/qr", method = RequestMethod.POST)
+	public String submitCreateUser(Model model, @RequestParam HashMap<String, String> reqParams,
+			RedirectAttributes redirectAttributes) throws UnsupportedEncodingException {
+		User user = new User();
+		String email = reqParams.get("email");
+		String password = reqParams.get("password");
+
+		user.setEmail(email);
+		user.setPassword(password);
+		String secret = secretGenerator.generate();
+		user.setSecret(secret);
+		userSevice.createUser(user);
+		String qrUrl = userSevice.generateQRUrl(user);
+		model.addAttribute("qrurl", qrUrl);
+
+		return "qr";
+
+	}
+
 	@GetMapping("/403")
 	public String accessDenied() {
 		return "403";
@@ -87,7 +92,36 @@ public class MainController {
 
 	@GetMapping("/login")
 	public String getLogin() {
+		return "login";
+	}
+
+	@GetMapping("/signin")
+	public String getSignin() {
+
 		return "signin";
+	}
+
+	@RequestMapping(value = "/signinmfa", method = RequestMethod.POST)
+	public String submitSignIn(Model model, @RequestParam HashMap<String, String> reqParams,
+			RedirectAttributes redirectAttributes) throws UnsupportedEncodingException {
+
+		String email = reqParams.get("email");
+		String password = reqParams.get("password");
+		String authencode = reqParams.get("authencode");
+		User user = userSevice.findByEmail(email);
+		try {
+
+			if (verifier.isValidCode(user.getSecret(), authencode)) {
+				model.addAttribute("user", user);
+				return "admin";
+
+			} else {
+				return "/signin";
+			}
+		} catch (Exception e) {
+			return "/signin";
+		}
+
 	}
 
 }

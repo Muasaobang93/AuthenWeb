@@ -24,6 +24,12 @@ public class UserSevice {
 		User user = userRepository.findBySecret(secret);
 		return user;
 	}
+	
+	public User findByEmail(String email) {
+		User user = userRepository.findByEmail(email);
+		return user;
+	}
+	
 	public void createUser(User user) {
 		userRepository.save(user);
 	};
