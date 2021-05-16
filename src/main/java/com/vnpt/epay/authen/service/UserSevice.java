@@ -24,4 +24,8 @@ public class UserSevice {
 		User user = userRepository.findBySecret(secret);
 		return user;
 	}
+	public void createUser(User user) {
+		userRepository.save(user);
+	};
+	
 }

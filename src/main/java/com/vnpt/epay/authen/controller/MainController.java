@@ -52,7 +52,7 @@ public class MainController {
 		return "index";
 	}
 
-	@GetMapping("/signin")
+	@GetMapping("/home")
 	public String admin() {
 		return "admin";
 	}
@@ -73,21 +73,11 @@ public class MainController {
 		        user.setPassword(password);
 		        String secret = secretGenerator.generate();
 		        user.setSecret(secret);
-
-//		        QrData data = qrDataFactory.newBuilder()
-//		            .label(email)
-//		            .secret(secret)
-//		            .issuer("AuthenWeb")
-//		            .build();
-//		        String qrCodeImage = getDataUriForImage(
-//		                qrGenerator.generate(data), 
-//		                qrGenerator.getImageMimeType()
-//		              );
-		        
+		        userSevice.createUser(user);
 		        String   qrUrl = userSevice.generateQRUrl(user);
 		        model.addAttribute("qrurl", qrUrl);
 		        
-		        return "/qr";
+		        return "qr";
 	     
 	    }
 	@GetMapping("/403")
@@ -97,7 +87,7 @@ public class MainController {
 
 	@GetMapping("/login")
 	public String getLogin() {
-		return "login";
+		return "signin";
 	}
 
 }
