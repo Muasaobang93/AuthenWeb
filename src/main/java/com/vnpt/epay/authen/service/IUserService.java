@@ -12,7 +12,6 @@ import com.vnpt.epay.authen.model.VerificationToken;
 
 public interface IUserService {
 	
-	 User registerNewUserAccount(UserDto accountDto);
 
 	    User getUser(String verificationToken);
 

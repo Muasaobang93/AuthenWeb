@@ -1,5 +1,6 @@
 package com.vnpt.epay.authen.controller;
 
+import java.io.UnsupportedEncodingException;
 import java.util.Locale;
 
 import javax.servlet.http.HttpServletRequest;
@@ -11,6 +12,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import com.vnpt.epay.authen.entity.User;
+import com.vnpt.epay.authen.service.IUserService;
 import com.vnpt.epay.authen.service.UserDetailsServiceImpl;
 import com.vnpt.epay.authen.service.UserSevice;
 
@@ -21,6 +23,9 @@ public class MainController {
 	
 	@Autowired
 	UserSevice userSevice;
+	
+	@Autowired
+	IUserService iUserService;
 
     @GetMapping("/")
     public String index() {
@@ -43,9 +48,9 @@ public class MainController {
     }
     
     @GetMapping("/registrationConfirm")
-    public String confirmRegistration(final HttpServletRequest request,final ModelMap model,@RequestParam("token") String token) {
+    public String confirmRegistration(final HttpServletRequest request,final ModelMap model,@RequestParam("token") String token) throws UnsupportedEncodingException {
     	Locale locale = request.getLocale();
-        String result = userService.validateVerificationToken(token);
+        String result = iUserService.validateVerificationToken(token);
         if(result.equals("valid")) {
             User user = userSevice.findBySecret(token);
             if (user.isAdditionalSecurity()) {
@@ -57,6 +62,7 @@ public class MainController {
               "message", "save");
             return "redirect:/login?lang=" + locale.getLanguage();
         }
+		return result;
         
         
        
