@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+	<meta charset="UTF-8" />
+	<title>Change TOTP Account</title>
+	<link href="../static/css/style.css" th:href="@{/css/style.css}" rel="stylesheet" />
+</head>
+
+<body>
+	<div class="main-content">
+		<td th:text="${error}"></td>
+		<form th:action="@{/changemfa}" method="POST">
+			<td type="text" name="email" text = "${user.getEmail()}"/><br />
+			<input type="password" name="password" placeholder="Your password" /><br />
+			<button type="submit">Change ToTP</button>
+			<br />
+		</form>
+	</div>
+</body>
+
+</html>

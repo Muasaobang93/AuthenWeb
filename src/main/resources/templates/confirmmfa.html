@@ -10,7 +10,7 @@
 	<div class="main-content">
 		<td th:text="${error}"></td>
 		
-		<form th:action="@{/confirmmfa(secret=${user.getSecret()})}" method="POST">
+		<form th:action="@{/confirmmfa(email=${user.getEmail()})}" method="POST">
 				<input type='text' name='authencode' /><br/>
 				<button type="submit">Login</button>
 				<br />

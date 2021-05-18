@@ -2,21 +2,13 @@ package com.vnpt.epay.authen.controller;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
-import java.util.Base64;
 import java.util.HashMap;
-import java.util.Locale;
-import java.util.Optional;
-
-import javax.servlet.http.HttpServletRequest;
 
 import org.jboss.aerogear.security.otp.Totp;
 import org.jboss.aerogear.security.otp.api.Base32;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -24,14 +16,10 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.vnpt.epay.authen.entity.User;
-import com.vnpt.epay.authen.service.IUserService;
 import com.vnpt.epay.authen.service.UserDetailsServiceImpl;
 import com.vnpt.epay.authen.service.UserSevice;
 
 import dev.samstevens.totp.code.CodeVerifier;
-import dev.samstevens.totp.qr.QrData;
-import dev.samstevens.totp.qr.QrDataFactory;
-import dev.samstevens.totp.qr.QrGenerator;
 import dev.samstevens.totp.secret.SecretGenerator;
 
 @Controller
@@ -46,17 +34,11 @@ public class MainController {
 	SecretGenerator secretGenerator;
 
 	@Autowired
-	private QrDataFactory qrDataFactory;
-
-	@Autowired
-	private QrGenerator qrGenerator;
-
-	@Autowired
 	private CodeVerifier verifier;
 
 	@GetMapping("/")
 	public String index() {
-		return "admin";
+		return "signin";
 	}
 
 	@GetMapping("/home")
@@ -111,7 +93,12 @@ public class MainController {
 		model.addAttribute("error", "Nhập thông tin đăng nhập");
 		return "signin";
 	}
-
+	
+	@GetMapping("/changeotp")
+	public String changeTotp() {
+		return "changeotp";
+	}
+	
 	@RequestMapping(value = "/signinmfa", method = RequestMethod.POST)
 	public String submitSignIn(Model model, @RequestParam HashMap<String, String> reqParams,
 			RedirectAttributes redirectAttributes) throws UnsupportedEncodingException {
@@ -122,19 +109,6 @@ public class MainController {
 		if (user != null) {
 			if (user.getPassword().equalsIgnoreCase(password)) {
 				if (user.isAdditionalSecurity()) {
-//				try {
-//					if (verifier.isValidCode(user.getSecret(), authencode)) {
-//						model.addAttribute("user", user);
-//						return "admin";
-//
-//					} else {
-//						model.addAttribute("error", "Mã xác thực google chưa đúng");
-//						return "/signin";
-//					}
-//				} catch (Exception e) {
-//					model.addAttribute("error", "Lỗi xác thực");
-//					return "/signin";
-//				}	
 					model.addAttribute("error", "Vui lòng nhập mã xác thực TOTP");
 					model.addAttribute("user", user);
 					return "confirmmfa";
@@ -156,39 +130,35 @@ public class MainController {
 
 	@RequestMapping(value = "/confirmmfa", method = RequestMethod.POST)
 	public String confirmMfa(Model model, @RequestParam HashMap<String, String> reqParams,
-			@RequestParam(name = "secret", required = true) String secret, RedirectAttributes redirectAttributes) {
+			@RequestParam(name = "email", required = true) String email, RedirectAttributes redirectAttributes) {
 		String authencode = reqParams.get("authencode");
-		System.out.println("secret " + secret);
+		User user = userSevice.findByEmail(email);
+		if (user != null) {
+			try {
+				if (verifier.isValidCode(user.getSecret(), authencode)) {
+					model.addAttribute("user", user);
+					return "admin";
 
-		try {
-			if (verifier.isValidCode(secret, authencode)) {
-				model.addAttribute("user", "");
-				return "admin";
-
-			} else {
-				model.addAttribute("error", "Mã xác thực google chưa đúng");
+				} else {
+					model.addAttribute("error", "Mã xác thực google chưa đúng");
+					return "/confirmmfa";
+				}
+			} catch (Exception e) {
+				model.addAttribute("error", "Lỗi xác thực");
 				return "/confirmmfa";
 			}
-		} catch (Exception e) {
-			model.addAttribute("error", "Lỗi xác thực");
-			return "/confirmmfa";
+		} else {
+			model.addAttribute("error", "Vui lòng đăng nhập lại");
+			return "/signin";
 		}
 	}
 
-	/*
-	 * @RequestMapping(value = "/confirmmfa", method = RequestMethod.POST) public
-	 * String confirmMfa(Model model, @RequestParam HashMap<String, String>
-	 * reqParams, RedirectAttributes redirectAttributes) { String authencode =
-	 * reqParams.get("authencode"); User user = (User) model.getAttribute("user");
-	 * System.out.println("secret " + user.getSecret());
-	 * 
-	 * try { if (verifier.isValidCode(user.getSecret(), authencode)) {
-	 * model.addAttribute("user", user.getEmail()); return "admin";
-	 * 
-	 * } else { model.addAttribute("error", "Mã xác thực google chưa đúng"); return
-	 * "/confirmmfa"; } } catch (Exception e) { model.addAttribute("error",
-	 * "Lỗi xác thực"); return "/confirmmfa"; } }
-	 */
+	@RequestMapping(value = "/changemfa", method = RequestMethod.POST)
+	public String changeMFA(Model model, @RequestParam HashMap<String, String> reqParams,
+			RedirectAttributes redirectAttributes) throws UnsupportedEncodingException {
+		
+		return "signin";
+	}
 
 	public static void main(String[] args) throws UnsupportedEncodingException {
 		String sr = URLEncoder.encode(String.format("otpauth://totp/%s:%s?secret=%s&issuer=%s", "AuthenWeb", "quannh",

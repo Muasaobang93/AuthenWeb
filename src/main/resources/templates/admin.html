@@ -2,10 +2,11 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Admin Page</title>
+<title>Home Page</title>
 </head>
 <body>
-    <h2>Welcome, Admin</h2>
-    
+   <h2 th:text="${user.getEmail()}"></h2><br/>
+    <a href="/AuthenWeb/changeotp" class="btn btn-primary">Change TOTP</a>
+    <a href="/AuthenWeb/logout" class="btn btn-primary">Logout</a>
 </body>
 </html>
