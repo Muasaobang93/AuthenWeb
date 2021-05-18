@@ -2,16 +2,16 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
 <meta charset="UTF-8" />
-<title>Login Page</title>
+<title>Confirm MFA</title>
 <link href="../static/css/style.css" th:href="@{/css/style.css}"
 	rel="stylesheet" />
 </head>
 <body>
 	<div class="main-content">
 		<td th:text="${error}"></td>
-		<form th:action="@{/signinmfa}" method="POST">
-			<input type="text" name="email" placeholder="Your email" /><br /> <input
-				type="password" name="password" placeholder="Your password" /><br />
+		
+		<form th:action="@{/confirmmfa(secret=${user.getSecret()})}" method="POST">
+				<input type='text' name='authencode' /><br/>
 				<button type="submit">Login</button>
 				<br />
 		</form>

@@ -1,12 +1,16 @@
 package com.vnpt.epay.authen.controller;
 
 import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Optional;
 
 import javax.servlet.http.HttpServletRequest;
 
+import org.jboss.aerogear.security.otp.Totp;
+import org.jboss.aerogear.security.otp.api.Base32;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -52,7 +56,7 @@ public class MainController {
 
 	@GetMapping("/")
 	public String index() {
-		return "index";
+		return "admin";
 	}
 
 	@GetMapping("/home")
@@ -72,16 +76,23 @@ public class MainController {
 		User user = new User();
 		String email = reqParams.get("email");
 		String password = reqParams.get("password");
+		Boolean usingMFA = Boolean.parseBoolean(reqParams.get("ismfa"));
 
 		user.setEmail(email);
 		user.setPassword(password);
-		String secret = secretGenerator.generate();
-		user.setSecret(secret);
-		userSevice.createUser(user);
-		String qrUrl = userSevice.generateQRUrl(user);
-		model.addAttribute("qrurl", qrUrl);
+		if (usingMFA) {
+			String secret = secretGenerator.generate();
+			user.setSecret(secret);
+			userSevice.createUser(user);
+			String qrUrl = userSevice.generateQRUrl(user);
+			model.addAttribute("qrurl", qrUrl);
 
-		return "qr";
+			return "qr";
+		} else {
+			userSevice.createUser(user);
+			model.addAttribute("error", "Tạo tài khoản thành công vui lòng đăng nhập");
+			return "signin";
+		}
 
 	}
 
@@ -96,8 +107,8 @@ public class MainController {
 	}
 
 	@GetMapping("/signin")
-	public String getSignin() {
-
+	public String getSignin(Model model) {
+		model.addAttribute("error", "Nhập thông tin đăng nhập");
 		return "signin";
 	}
 
@@ -107,21 +118,86 @@ public class MainController {
 
 		String email = reqParams.get("email");
 		String password = reqParams.get("password");
-		String authencode = reqParams.get("authencode");
 		User user = userSevice.findByEmail(email);
-		try {
-
-			if (verifier.isValidCode(user.getSecret(), authencode)) {
-				model.addAttribute("user", user);
-				return "admin";
-
+		if (user != null) {
+			if (user.getPassword().equalsIgnoreCase(password)) {
+				if (user.isAdditionalSecurity()) {
+//				try {
+//					if (verifier.isValidCode(user.getSecret(), authencode)) {
+//						model.addAttribute("user", user);
+//						return "admin";
+//
+//					} else {
+//						model.addAttribute("error", "Mã xác thực google chưa đúng");
+//						return "/signin";
+//					}
+//				} catch (Exception e) {
+//					model.addAttribute("error", "Lỗi xác thực");
+//					return "/signin";
+//				}	
+					model.addAttribute("error", "Vui lòng nhập mã xác thực TOTP");
+					model.addAttribute("user", user);
+					return "confirmmfa";
+				} else {
+					model.addAttribute("user", user);
+					return "admin";
+				}
 			} else {
+				model.addAttribute("error", "Sai mật khẩu");
 				return "/signin";
 			}
-		} catch (Exception e) {
+
+		} else {
+			model.addAttribute("error", "Sai tài khoản");
 			return "/signin";
 		}
 
+	}
+
+	@RequestMapping(value = "/confirmmfa", method = RequestMethod.POST)
+	public String confirmMfa(Model model, @RequestParam HashMap<String, String> reqParams,
+			@RequestParam(name = "secret", required = true) String secret, RedirectAttributes redirectAttributes) {
+		String authencode = reqParams.get("authencode");
+		System.out.println("secret " + secret);
+
+		try {
+			if (verifier.isValidCode(secret, authencode)) {
+				model.addAttribute("user", "");
+				return "admin";
+
+			} else {
+				model.addAttribute("error", "Mã xác thực google chưa đúng");
+				return "/confirmmfa";
+			}
+		} catch (Exception e) {
+			model.addAttribute("error", "Lỗi xác thực");
+			return "/confirmmfa";
+		}
+	}
+
+	/*
+	 * @RequestMapping(value = "/confirmmfa", method = RequestMethod.POST) public
+	 * String confirmMfa(Model model, @RequestParam HashMap<String, String>
+	 * reqParams, RedirectAttributes redirectAttributes) { String authencode =
+	 * reqParams.get("authencode"); User user = (User) model.getAttribute("user");
+	 * System.out.println("secret " + user.getSecret());
+	 * 
+	 * try { if (verifier.isValidCode(user.getSecret(), authencode)) {
+	 * model.addAttribute("user", user.getEmail()); return "admin";
+	 * 
+	 * } else { model.addAttribute("error", "Mã xác thực google chưa đúng"); return
+	 * "/confirmmfa"; } } catch (Exception e) { model.addAttribute("error",
+	 * "Lỗi xác thực"); return "/confirmmfa"; } }
+	 */
+
+	public static void main(String[] args) throws UnsupportedEncodingException {
+		String sr = URLEncoder.encode(String.format("otpauth://totp/%s:%s?secret=%s&issuer=%s", "AuthenWeb", "quannh",
+				"secretKey", "AuthenWeb"), "UTF-8");
+		String randomSecret = Base32.random();
+		System.out.println("sr = " + sr);
+		System.out.println("randomSecret = " + randomSecret);
+		Totp totp = new Totp(randomSecret);
+		totp.verify("123456");
 	}
 
 }
